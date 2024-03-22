@@ -1,32 +1,43 @@
 package ru.geekbrains;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Table {
-    private int forksOnTable = 5;
     private static final int PHILOSOPHERS_COUNT = 5;
-    private final List<Philosopher> philosophers = new ArrayList<>();
+    private List<Fork> forks;
+
+    public Table() {
+        generateForks();
+    }
 
     public synchronized boolean tryGetForks () {
-        if (forksOnTable < 2) {
+        Fork fork = forks.stream().filter(f -> !f.isOccupied()).findFirst().orElse(null);
+        if (fork == null){
             return false;
         }
-        forksOnTable -= 2;
+
+        fork.setOccupied(true);
         return true;
     }
 
     public synchronized void putForksOnTable () {
-        forksOnTable += 2;
+        Fork fork = forks.stream().filter(Fork::isOccupied).findFirst().orElse(null);
+        if (fork == null) return;
+        fork.setOccupied(false);
     }
 
     public void start() {
+        for (int i = 0; i < PHILOSOPHERS_COUNT; i++) {
+            Thread philosopherThread = new Thread(new Philosopher(this), "philosopher " + (i + 1));
+            philosopherThread.start();
+        }
+    }
+
+    private void generateForks() {
+        forks = new ArrayList<>();
 
         for (int i = 0; i < PHILOSOPHERS_COUNT; i++) {
-            Philosopher philosopher = new Philosopher(this);
-            philosophers.add(philosopher);
-            Thread philosopherThread = new Thread(philosopher, "philosopher " + (i + 1));
-            philosopherThread.start();
+            forks.add(new Fork());
         }
     }
 }
